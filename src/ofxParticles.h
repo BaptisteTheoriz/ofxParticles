@@ -281,7 +281,7 @@ public:
         public:
             ofxParticleEmitter() : positionStart(), positionEnd(),posSpread(),velocityStart(),velocityEnd(),velSpread(),
             rotation(),rotSpread(),rotVel(),rotVelSpread(),size(1.0),sizeSpread(0.0),
-            life(1.0),lifeSpread(0.0),numPars(1),color(255,255,255,255),colorSpread(0,0,0,0)
+            life(1.0),lifeSpread(0.0),emissionRate(1),color(255,255,255,255),colorSpread(0,0,0,0), lastTimeParticleWasEmitted(ofGetElapsedTimeMillis())
             {}
             ~ofxParticleEmitter(){}
             ofVec3f positionStart;
@@ -298,8 +298,9 @@ public:
             float sizeSpread;
             float life;
             float lifeSpread;
-            int numPars;
-            ofColor color;
+			float emissionRate; // particles emitted / second
+			uint64_t lastTimeParticleWasEmitted;
+			ofColor color;
             ofColor colorSpread;
             ofxParticleEmitter & setPosition(ofVec3f pos){
                 positionStart = positionEnd = pos;
@@ -319,6 +320,12 @@ public:
                 velocityEnd = velEnd;
                 return *this;
             }
+			uint64_t getEmissionIntervalMillis() {
+				return (uint64_t)(1.0 / emissionRate * 1000);
+			}
+
+		private:
+			float emissionInterval;
         };
         
         class ofxParticleSystem {
@@ -330,7 +337,13 @@ public:
             ~ofxParticleSystem(){}
             
             void addParticles(ofxParticleEmitter & src){
-                for(int i=0;i<src.numPars;i++){
+				int particlesToEmit = 0;
+				if (ofGetElapsedTimeMillis() - src.lastTimeParticleWasEmitted > src.getEmissionIntervalMillis()) {
+					particlesToEmit = (ofGetElapsedTimeMillis() - src.lastTimeParticleWasEmitted) / src.getEmissionIntervalMillis();
+					src.lastTimeParticleWasEmitted = ofGetElapsedTimeMillis();
+				}
+
+                for(int i=0;i<particlesToEmit;i++){
                     ofVec3f pos = src.positionStart;
                     ofVec3f vel = src.velocityStart;
                     if(src.positionEnd != src.positionStart || src.velocityStart != src.velocityEnd){
@@ -356,8 +369,8 @@ public:
                     par->color = pColor;
                     particles.push_back(par);
                 }
-                numParticles+=src.numPars;
-                totalParticlesEmitted+=src.numPars;
+                numParticles+=particlesToEmit;
+                totalParticlesEmitted+=particlesToEmit;
             }
             
             void attractTo(ofPoint p, const float accel, const float minDist, const bool consumeParticle){
