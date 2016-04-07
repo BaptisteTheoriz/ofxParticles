@@ -433,6 +433,14 @@ public:
                         (**it).draw(tex2);
                 }
             }
+
+			void draw(vector<ofTexture>& texVec) {
+				//                particles.sort();
+				for (list<ofxParticle*>::iterator it = particles.begin(); it != particles.end(); it++) {
+					int index = (**it).particleID;
+					(**it).draw(texVec[index%texVec.size()]);
+				}
+			}
             
             int getNumParticles(){return numParticles;}
             
