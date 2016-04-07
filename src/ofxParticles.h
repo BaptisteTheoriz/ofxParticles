@@ -32,6 +32,8 @@ public:
     float lifeStart;
     float dt;
     int particleID;
+
+	bool growWithLife;
     
     
     bool operator < (const ofxParticle &b){
@@ -46,6 +48,8 @@ public:
             lifeStart = life = 1.0;
             particleID = 0;
             dt = 1.0/60;
+
+			growWithLife = false;
         }
         
         ofxParticle(ofVec3f pos, ofVec3f vel, float size_, float life_){
@@ -263,6 +267,12 @@ public:
                 w = w/h*size;
                 h = size;
             }
+
+			if (growWithLife) {
+				w *= (lifeStart - life) / lifeStart;
+				h *= (lifeStart - life) / lifeStart;
+			}
+
             ofSetColor(color);
             ofPushMatrix();
             ofTranslate(position);
@@ -281,7 +291,8 @@ public:
         public:
             ofxParticleEmitter() : positionStart(), positionEnd(),posSpread(),velocityStart(),velocityEnd(),velSpread(),
             rotation(),rotSpread(),rotVel(),rotVelSpread(),size(1.0),sizeSpread(0.0),
-            life(1.0),lifeSpread(0.0),emissionRate(1),color(255,255,255,255),colorSpread(0,0,0,0), lastTimeParticleWasEmitted(ofGetElapsedTimeMillis())
+            life(1.0),lifeSpread(0.0),emissionRate(1),color(255,255,255,255),colorSpread(0,0,0,0), lastTimeParticleWasEmitted(ofGetElapsedTimeMillis()),
+			growWithLife(false)
             {}
             ~ofxParticleEmitter(){}
             ofVec3f positionStart;
@@ -302,6 +313,8 @@ public:
 			uint64_t lastTimeParticleWasEmitted;
 			ofColor color;
             ofColor colorSpread;
+			bool growWithLife;
+
             ofxParticleEmitter & setPosition(ofVec3f pos){
                 positionStart = positionEnd = pos;
                 return *this;
@@ -359,6 +372,7 @@ public:
                     par->rotation = src.rotation+ofRandVec3f()*src.rotSpread;
                     par->rotationalVelocity = src.rotVel+ofRandVec3f()*src.rotVelSpread;
                     par->particleID = totalParticlesEmitted+i;
+					par->growWithLife = src.growWithLife;
                     ofColor pColor = src.color;
                     if(src.colorSpread != ofColor(0,0,0,0)){
                         pColor.r = ofClamp(pColor.r + ofRandomf()*src.colorSpread.r,0,255);
