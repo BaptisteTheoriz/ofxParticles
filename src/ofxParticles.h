@@ -34,7 +34,7 @@ public:
     int particleID;
 
 	bool growWithLife;
-    
+	bool fadeWithLife;
     
     bool operator < (const ofxParticle &b){
         return position.z < b.position.z;
@@ -50,6 +50,7 @@ public:
             dt = 1.0/60;
 
 			growWithLife = false;
+			fadeWithLife = false;
         }
         
         ofxParticle(ofVec3f pos, ofVec3f vel, float size_, float life_){
@@ -273,8 +274,13 @@ public:
 				h *= (lifeStart - life) / lifeStart;
 			}
 
-            ofSetColor(color);
-            ofPushMatrix();
+			if (fadeWithLife) {
+				ofSetColor(color, sin((lifeStart - life) / lifeStart * PI) * 255);
+			}
+			else {
+				ofSetColor(color);
+			}
+			ofPushMatrix();
             ofTranslate(position);
             ofRotateX(rotation.x);
             ofRotateY(rotation.y);
@@ -292,7 +298,7 @@ public:
             ofxParticleEmitter() : positionStart(), positionEnd(),posSpread(),velocityStart(),velocityEnd(),velSpread(),
             rotation(),rotSpread(),rotVel(),rotVelSpread(),size(1.0),sizeSpread(0.0),
             life(1.0),lifeSpread(0.0),emissionRate(1),color(255,255,255,255),colorSpread(0,0,0,0), lastTimeParticleWasEmitted(ofGetElapsedTimeMillis()),
-			growWithLife(false)
+			growWithLife(false), fadeWithLife(false)
             {}
             ~ofxParticleEmitter(){}
             ofVec3f positionStart;
@@ -314,6 +320,7 @@ public:
 			ofColor color;
             ofColor colorSpread;
 			bool growWithLife;
+			bool fadeWithLife;
 
             ofxParticleEmitter & setPosition(ofVec3f pos){
                 positionStart = positionEnd = pos;
@@ -373,6 +380,7 @@ public:
                     par->rotationalVelocity = src.rotVel+ofRandVec3f()*src.rotVelSpread;
                     par->particleID = totalParticlesEmitted+i;
 					par->growWithLife = src.growWithLife;
+					par->fadeWithLife = src.fadeWithLife;
                     ofColor pColor = src.color;
                     if(src.colorSpread != ofColor(0,0,0,0)){
                         pColor.r = ofClamp(pColor.r + ofRandomf()*src.colorSpread.r,0,255);
