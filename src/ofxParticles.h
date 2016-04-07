@@ -33,7 +33,10 @@ public:
     float dt;
     int particleID;
 
-	bool growWithLife;
+	bool growIn;
+	float growDuration; // percentage of life (0-1)
+	bool shrinkOut;
+	float shrinkDuration; // percentage of life (0-1) 
 	bool fadeWithLife;
     
     bool operator < (const ofxParticle &b){
@@ -49,7 +52,10 @@ public:
             particleID = 0;
             dt = 1.0/60;
 
-			growWithLife = false;
+			growIn = false;
+			growDuration = 0.5;
+			shrinkOut = false;
+			shrinkDuration = 0.5;
 			fadeWithLife = false;
         }
         
@@ -63,6 +69,12 @@ public:
             lifeStart = life = life_;
             particleID = 0;
             dt = 1.0/60;
+
+			growIn = false;
+			growDuration = 0.5;
+			shrinkOut = false;
+			shrinkDuration = 0.5;
+			fadeWithLife = false;
         }
         
         ofxParticle(const ofxParticle &mom){
@@ -78,6 +90,12 @@ public:
             lifeStart = mom.lifeStart;
             particleID = mom.particleID;
             dt = 1.0/60;
+
+			growIn = mom.growIn;
+			growDuration = mom.growDuration;
+			shrinkOut = mom.shrinkOut;
+			shrinkDuration = mom.shrinkDuration;
+			fadeWithLife = mom.fadeWithLife;
         }
         
         ~ofxParticle(){}
@@ -269,13 +287,18 @@ public:
                 h = size;
             }
 
-			if (growWithLife) {
-				w *= (lifeStart - life) / lifeStart;
-				h *= (lifeStart - life) / lifeStart;
+			float evolution = (lifeStart - life) / lifeStart;
+			if (growIn && evolution < growDuration) {
+				w *= sin(evolution / growDuration * PI/2.0);
+				h *= sin(evolution / growDuration * PI/2.0);
+			}
+			if (shrinkOut && 1 - evolution < shrinkDuration) {
+				w *= sin((1-evolution) / shrinkDuration * PI/2.0);
+				h *= sin((1-evolution) / shrinkDuration * PI/2.0);
 			}
 
 			if (fadeWithLife) {
-				ofSetColor(color, sin((lifeStart - life) / lifeStart * PI) * 255);
+				ofSetColor(color, sin(evolution * PI) * 255);
 			}
 			else {
 				ofSetColor(color);
@@ -298,7 +321,7 @@ public:
             ofxParticleEmitter() : positionStart(), positionEnd(),posSpread(),velocityStart(),velocityEnd(),velSpread(),
             rotation(),rotSpread(),rotVel(),rotVelSpread(),size(1.0),sizeSpread(0.0),
             life(1.0),lifeSpread(0.0),emissionRate(1),color(255,255,255,255),colorSpread(0,0,0,0), lastTimeParticleWasEmitted(ofGetElapsedTimeMillis()),
-			growWithLife(false), fadeWithLife(false)
+			growIn(false), growDuration(0.5), shrinkOut(false), shrinkDuration(0.5), fadeWithLife(false)
             {}
             ~ofxParticleEmitter(){}
             ofVec3f positionStart;
@@ -319,7 +342,11 @@ public:
 			uint64_t lastTimeParticleWasEmitted;
 			ofColor color;
             ofColor colorSpread;
-			bool growWithLife;
+			
+			bool growIn;
+			float growDuration; // percentage of life (0-1)
+			bool shrinkOut;
+			float shrinkDuration; // percentage of life (0-1) 
 			bool fadeWithLife;
 
             ofxParticleEmitter & setPosition(ofVec3f pos){
@@ -379,7 +406,10 @@ public:
                     par->rotation = src.rotation+ofRandVec3f()*src.rotSpread;
                     par->rotationalVelocity = src.rotVel+ofRandVec3f()*src.rotVelSpread;
                     par->particleID = totalParticlesEmitted+i;
-					par->growWithLife = src.growWithLife;
+					par->growIn = src.growIn;
+					par->growDuration = src.growDuration;
+					par->shrinkOut = src.shrinkOut;
+					par->shrinkDuration = src.shrinkDuration;
 					par->fadeWithLife = src.fadeWithLife;
                     ofColor pColor = src.color;
                     if(src.colorSpread != ofColor(0,0,0,0)){
