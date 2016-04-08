@@ -17,6 +17,9 @@ inline ofVec3f ofRandVec3f(){
 }
 
 class ofxParticle {
+private:
+	float randomSeed;
+
 public:
     ofVec3f position;
     ofVec3f velocity; // pixels/sec
@@ -39,6 +42,10 @@ public:
 	float shrinkDuration; // percentage of life (0-1) 
 	bool fadeWithLife;
     
+	bool randomMove;
+	ofPoint amplitude;
+	ofPoint frequency;
+
     bool operator < (const ofxParticle &b){
         return position.z < b.position.z;
         }
@@ -57,6 +64,12 @@ public:
 			shrinkOut = false;
 			shrinkDuration = 0.5;
 			fadeWithLife = false;
+
+			randomMove = false;
+			amplitude = ofPoint(10,10);
+			frequency = ofPoint(5,5);
+
+			randomSeed = ofRandom(ofGetElapsedTimeMillis());
         }
         
         ofxParticle(ofVec3f pos, ofVec3f vel, float size_, float life_){
@@ -75,6 +88,12 @@ public:
 			shrinkOut = false;
 			shrinkDuration = 0.5;
 			fadeWithLife = false;
+
+			randomMove = false;
+			amplitude = ofPoint(10, 10);
+			frequency = ofPoint(5, 5);
+
+			randomSeed = ofRandom(ofGetElapsedTimeMillis());
         }
         
         ofxParticle(const ofxParticle &mom){
@@ -96,6 +115,12 @@ public:
 			shrinkOut = mom.shrinkOut;
 			shrinkDuration = mom.shrinkDuration;
 			fadeWithLife = mom.fadeWithLife;
+
+			randomMove = mom.randomMove;
+			amplitude = mom.amplitude;
+			frequency = mom.frequency;
+
+			randomSeed = ofRandom(ofGetElapsedTimeMillis());
         }
         
         ~ofxParticle(){}
@@ -114,7 +139,20 @@ public:
             lifeStart = mom.lifeStart;
             particleID = mom.particleID;
             dt = 1.0/60;
-            return *this;
+
+			growIn = mom.growIn;
+			growDuration = mom.growDuration;
+			shrinkOut = mom.shrinkOut;
+			shrinkDuration = mom.shrinkDuration;
+			fadeWithLife = mom.fadeWithLife;
+
+			randomMove = mom.randomMove;
+			amplitude = mom.amplitude;
+			frequency = mom.frequency;
+
+			randomSeed = ofRandom(ofGetElapsedTimeMillis());
+
+			return *this;
         }
 
         void constrainToRect(ofRectangle bounds, const float k, const float dist, const float drag)
@@ -262,6 +300,13 @@ public:
             velocity += acceleration * dt;
             velocity -= (velocity * dt * (1.0-drag));
             position += velocity * dt;
+			if (randomMove) {
+				ofSeedRandom(randomSeed);
+				float phase = ofRandom(0, 2*PI);
+				ofPoint prevSinus = ofPoint(amplitude.x * sin((life + dt) / lifeStart * frequency.x + phase), amplitude.y * sin((life + dt) / lifeStart * frequency.y + phase));
+				ofPoint sinus = ofPoint(amplitude.x * sin(life / lifeStart * frequency.x + phase), amplitude.y * sin(life / lifeStart * frequency.y + phase));
+				position = position - prevSinus + sinus;
+			}
             acceleration -= acceleration * dt;
             rotation += rotationalVelocity * dt;
             
@@ -321,7 +366,8 @@ public:
             ofxParticleEmitter() : positionStart(), positionEnd(),posSpread(),velocityStart(),velocityEnd(),velSpread(),
             rotation(),rotSpread(),rotVel(),rotVelSpread(),size(1.0),sizeSpread(0.0),
             life(1.0),lifeSpread(0.0),emissionRate(1),color(255,255,255,255),colorSpread(0,0,0,0), lastTimeParticleWasEmitted(ofGetElapsedTimeMillis()),
-			growIn(false), growDuration(0.5), shrinkOut(false), shrinkDuration(0.5), fadeWithLife(false)
+			growIn(false), growDuration(0.5), shrinkOut(false), shrinkDuration(0.5), fadeWithLife(false),
+			randomMove(false), amplitude(ofPoint(10,10)), frequency(ofPoint(5,5))
             {}
             ~ofxParticleEmitter(){}
             ofVec3f positionStart;
@@ -348,6 +394,10 @@ public:
 			bool shrinkOut;
 			float shrinkDuration; // percentage of life (0-1) 
 			bool fadeWithLife;
+
+			bool randomMove;
+			ofPoint amplitude;
+			ofPoint frequency;
 
             ofxParticleEmitter & setPosition(ofVec3f pos){
                 positionStart = positionEnd = pos;
@@ -384,6 +434,7 @@ public:
             ~ofxParticleSystem(){}
             
             void addParticles(ofxParticleEmitter & src){
+				ofSeedRandom();
 				int particlesToEmit = 0;
 				if (ofGetElapsedTimeMillis() - src.lastTimeParticleWasEmitted > src.getEmissionIntervalMillis()) {
 					particlesToEmit = (ofGetElapsedTimeMillis() - src.lastTimeParticleWasEmitted) / src.getEmissionIntervalMillis();
@@ -411,6 +462,9 @@ public:
 					par->shrinkOut = src.shrinkOut;
 					par->shrinkDuration = src.shrinkDuration;
 					par->fadeWithLife = src.fadeWithLife;
+					par->randomMove = src.randomMove;
+					par->frequency = src.frequency;
+					par->amplitude = src.amplitude;
                     ofColor pColor = src.color;
                     if(src.colorSpread != ofColor(0,0,0,0)){
                         pColor.r = ofClamp(pColor.r + ofRandomf()*src.colorSpread.r,0,255);
