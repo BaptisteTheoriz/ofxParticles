@@ -515,7 +515,7 @@ public:
             
             int update(float timeStep, float drag){
                 int particlesRemoved = 0;
-                for(list<ofxParticle*>::iterator it = particles.begin(); it != particles.end(); it++){
+                for(list<ofxParticle*>::iterator it = particles.begin(); it != particles.end(); ++it){
                     if((**it).isAlive()){
                         (**it).update(timeStep, drag);
                     }
@@ -524,6 +524,8 @@ public:
                         it = particles.erase(it);
                         delete p;
                         particlesRemoved++;
+
+						if (it == particles.end()) break;
                     }
                 }
                 numParticles-=particlesRemoved;
