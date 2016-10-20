@@ -440,6 +440,11 @@ public:
 		return (uint64_t)(1.0 / emissionRate * 1000);
 	}
 
+	// Reset last time a particle was emitted, to prevent spawning a lot of particles at once when emission was paused for example
+	void resetEmissionTimer() {
+		lastTimeParticleWasEmitted = ofGetElapsedTimeMillis();
+	}
+
 private:
 	float emissionInterval;
 
